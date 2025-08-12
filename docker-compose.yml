@@ -16,3 +16,20 @@ services:
     restart: always
     ports:
       - 8080:8080
+
+  postgres-mcp:
+    image: crystaldba/postgres-mcp
+    container_name: postgres-mcp
+
+    # Variables d'environnement
+    environment:
+      DATABASE_URI: postgresql://postgres:example@localhost:15432/postgres
+
+    # Ports exposés
+    ports:
+      - "8000:8000"
+
+    # Commande à exécuter dans le conteneur
+    command: ["--access-mode=unrestricted", "--transport=sse"]
+
+    restart: unless-stopped
