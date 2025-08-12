@@ -32,7 +32,7 @@ if "messages" not in st.session_state:
 
 def get_button_label(chat_df, chat_id):
     first_message = chat_df[(chat_df["ChatID"] == chat_id) & (chat_df["role"] == "user")].iloc[0]["content"]
-    return f"Chat {chat_id[7:]}: {' '.join(first_message.split()[:5])}..."
+    return chat_id, ' '.join(first_message.split()[:10])
 
 CSV_FILE = "chat_history.csv"
 try:
@@ -51,11 +51,8 @@ if st.sidebar.button("Start New Chat"):
 #Previous chats 
 st.sidebar.text('Chats')
 for chat_id in chat_history_df["ChatID"].unique()[::-1]:
-    #print("ChatID: ", chat_id)
-    button_label = get_button_label(chat_history_df, chat_id)
-    #print("ChatID: ",chat_id)
-    if st.sidebar.button(button_label):
-        print('Click boutton')
+    key_btn, label_btn = get_button_label(chat_history_df, chat_id)
+    if st.sidebar.button(label_btn, key=key_btn):
         st.session_state.chat_session_id = chat_id
         loaded_chat = chat_history_df[chat_history_df["ChatID"] == chat_id]
         df = loaded_chat[["role", "content"]]
@@ -68,7 +65,7 @@ async def main():
     print("\n Chat history df: ", chat_history_df)
     client = MultiServerMCPClient({
         "postgres": {
-            "transport": "sse",
+           "transport": "sse",
             "url": "http://localhost:8000/sse"
         },
         "tools":{
@@ -76,7 +73,7 @@ async def main():
             "url": "http://localhost:8001/mcp/"
         },
         "google-calendar": {
-            "url": "http://localhost:3000",
+           "url": "http://localhost:3000",
             "transport": "streamable_http",
                     }       
     })
@@ -84,12 +81,12 @@ async def main():
     #tools
     try:
         tools = await client.get_tools()
-        #print(tools)
     except:
         print('erreurs tools')
 
     #llm
-    key="B**************************************"
+    key = "Z************************************"
+    embeddings =  GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=key)
 
     llm =  ChatGoogleGenerativeAI(model="models/gemini-1.5-flash", api_key=key)
     
@@ -133,10 +130,4 @@ async def main():
         #save csv
         chat_history_df[['ChatID', 'role', 'content']].to_csv('chat_history.csv')
 
-
-# Lancer la boucle asynchrone
-if "loop" not in st.session_state:
-    st.session_state.loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(st.session_state.loop)
-
-st.session_state.loop.run_until_complete(main())
+asyncio.run(main())
